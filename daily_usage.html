@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Usage - SMARTWATT NEXUS</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-menu {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .nav-menu a:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .controls select, .controls input {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .chart-container h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .table-container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ SMARTWATT NEXUS</h1>
+        <div class="nav-menu">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/daily-usage">Daily Usage</a>
+            <a href="/predictions">Predictions</a>
+            <a href="/reports">Reports</a>
+            <a href="/bill-estimation">Bill Estimate</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>📅 Daily Usage Report</h2>
+        
+        <div class="controls">
+            <select id="daysPicker" onchange="updateChart()">
+                <option value="7">Last 7 Days</option>
+                <option value="14">Last 14 Days</option>
+                <option value="30">Last 30 Days</option>
+                <option value="90">Last 90 Days</option>
+            </select>
+        </div>
+        
+        <!-- Bar Chart -->
+        <div class="chart-container">
+            <h2>📊 Daily Consumption Bar Chart</h2>
+            <canvas id="dailyChart"></canvas>
+        </div>
+        
+        <!-- Statistics Table -->
+        <div class="table-container">
+            <h2>📋 Daily Statistics</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Consumption (kWh)</th>
+                        <th>Cost (₹)</th>
+                        <th>vs Average</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="statsTable">
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #999;">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        let dailyChart;
+        
+        async function updateChart() {
+            const days = document.getElementById('daysPicker').value;
+            
+            try {
+                const response = await fetch(`/api/consumption/daily?days=${days}`);
+                const data = await response.json();
+                
+                drawChart(data);
+                fillTable(data);
+                
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        function drawChart(data) {
+            const ctx = document.getElementById('dailyChart').getContext('2d');
+            
+            if (dailyChart) {
+                dailyChart.destroy();
+            }
+            
+            const colors = data.map(d => d.consumption > 50 ? '#ff6b6b' : '#667eea');
+            
+            dailyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.date),
+                    datasets: [{
+                        label: 'Daily Consumption (kWh)',
+                        data: data.map(d => d.consumption),
+                        backgroundColor: colors,
+                        borderColor: '#333',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Consumption (kWh)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function fillTable(data) {
+            const tbody = document.getElementById('statsTable');
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No data available</td></tr>';
+                return;
+            }
+            
+            const average = data.reduce((sum, d) => sum + d.consumption, 0) / data.length;
+            const rates = {
+                0: 2.80, 50: 3.40, 100: 4.60, 200: 6.00, 500: 7.50
+            };
+            
+            tbody.innerHTML = data.map(d => {
+                const diff = d.consumption - average;
+                const diffPercent = ((diff / average) * 100).toFixed(1);
+                const cost = d.consumption * 3.40; // Using average rate
+                const status = d.consumption > average * 1.2 ? '🔴 High' : 
+                              d.consumption < average * 0.8 ? '🟢 Low' : '🟡 Normal';
+                
+                return `
+                    <tr>
+                        <td>${d.date}</td>
+                        <td>${d.consumption.toFixed(2)}</td>
+                        <td>₹ ${cost.toFixed(2)}</td>
+                        <td>${diff > 0 ? '+' : ''}${diff.toFixed(2)} (${diffPercent}%)</td>
+                        <td>${status}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // Load initial data
+        updateChart();
+    </script>
+</body>
+</html>

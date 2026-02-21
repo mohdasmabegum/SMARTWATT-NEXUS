@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - SMARTWATT NEXUS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-menu {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .nav-menu a:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .report-controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .report-controls select, .report-controls input {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+        
+        .download-btn {
+            background: #51cf66;
+        }
+        
+        .download-btn:hover {
+            background: #40c057;
+        }
+        
+        .print-btn {
+            background: #4dabf7;
+        }
+        
+        .print-btn:hover {
+            background: #339af0;
+        }
+        
+        .report-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .report-card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .summary-item label {
+            color: #666;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .summary-item value {
+            font-size: 20px;
+            color: #333;
+            font-weight: 700;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: #f9f9f9;
+        }
+        
+        .timestamp {
+            color: #999;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        
+        @media print {
+            .header, .report-controls {
+                display: none;
+            }
+            
+            button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ SMARTWATT NEXUS</h1>
+        <div class="nav-menu">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/daily-usage">Daily Usage</a>
+            <a href="/predictions">Predictions</a>
+            <a href="/reports">Reports</a>
+            <a href="/bill-estimation">Bill Estimate</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>📊 Consumption Reports</h2>
+        
+        <div class="report-controls">
+            <select id="reportType" onchange="generateReport()">
+                <option value="monthly">Monthly Report</option>
+                <option value="quarterly">Quarterly Report</option>
+                <option value="annual">Annual Report</option>
+                <option value="custom">Custom Period</option>
+            </select>
+            
+            <input type="date" id="startDate" style="display: none;">
+            <input type="date" id="endDate" style="display: none;">
+            
+            <button class="print-btn" onclick="window.print()">🖨️ Print Report</button>
+            <button class="download-btn" onclick="downloadReport()">📥 Download CSV</button>
+        </div>
+        
+        <!-- Main Report -->
+        <div class="report-card" id="reportContent">
+            <h2>📋 Consumption Report</h2>
+            
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <label>Total Consumption</label>
+                    <value id="totalConsumption">-- kWh</value>
+                </div>
+                <div class="summary-item">
+                    <label>Average Daily</label>
+                    <value id="avgDaily">-- kWh</value>
+                </div>
+                <div class="summary-item">
+                    <label>Peak Day</label>
+                    <value id="peakDay">-- kWh</value>
+                </div>
+                <div class="summary-item">
+                    <label>Lowest Day</label>
+                    <value id="lowestDay">-- kWh</value>
+                </div>
+                <div class="summary-item">
+                    <label>Period Days</label>
+                    <value id="periodDays">--</value>
+                </div>
+                <div class="summary-item">
+                    <label>Estimated Cost</label>
+                    <value id="estimatedCost">₹ --</value>
+                </div>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Consumption (kWh)</th>
+                        <th>Estimated Cost (₹)</th>
+                        <th>vs Average (%)</th>
+                    </tr>
+                </thead>
+                <tbody id="reportTable">
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #999;">Loading report data...</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="timestamp" id="reportTimestamp"></div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('reportType').addEventListener('change', function() {
+            if (this.value === 'custom') {
+                document.getElementById('startDate').style.display = 'inline-block';
+                document.getElementById('endDate').style.display = 'inline-block';
+            } else {
+                document.getElementById('startDate').style.display = 'none';
+                document.getElementById('endDate').style.display = 'none';
+            }
+        });
+        
+        async function generateReport() {
+            const reportType = document.getElementById('reportType').value;
+            let days = 30;
+            
+            switch(reportType) {
+                case 'monthly': days = 30; break;
+                case 'quarterly': days = 90; break;
+                case 'annual': days = 365; break;
+                case 'custom': days = 7; break;
+            }
+            
+            try {
+                const response = await fetch(`/api/consumption/daily?days=${days}`);
+                const data = await response.json();
+                
+                if (data.length > 0) {
+                    fillReport(data, days);
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        function fillReport(data, days) {
+            const total = data.reduce((sum, d) => sum + d.consumption, 0);
+            const avg = total / data.length;
+            const max = Math.max(...data.map(d => d.consumption));
+            const min = Math.min(...data.map(d => d.consumption));
+            const cost = avg * 3.40 * days; // Approximate
+            
+            document.getElementById('totalConsumption').textContent = total.toFixed(2) + ' kWh';
+            document.getElementById('avgDaily').textContent = avg.toFixed(2) + ' kWh';
+            document.getElementById('peakDay').textContent = max.toFixed(2) + ' kWh';
+            document.getElementById('lowestDay').textContent = min.toFixed(2) + ' kWh';
+            document.getElementById('periodDays').textContent = data.length;
+            document.getElementById('estimatedCost').textContent = '₹ ' + cost.toFixed(2);
+            
+            const tbody = document.getElementById('reportTable');
+            tbody.innerHTML = data.map(d => {
+                const vs_avg = ((d.consumption - avg) / avg * 100).toFixed(1);
+                const itemCost = d.consumption * 3.40;
+                return `
+                    <tr>
+                        <td>${d.date}</td>
+                        <td>${d.consumption.toFixed(2)}</td>
+                        <td>₹ ${itemCost.toFixed(2)}</td>
+                        <td>${vs_avg > 0 ? '+' : ''}${vs_avg}%</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            document.getElementById('reportTimestamp').textContent = 
+                'Report generated on: ' + new Date().toLocaleString();
+        }
+        
+        async function downloadReport() {
+            const reportType = document.getElementById('reportType').value;
+            let days = 30;
+            
+            switch(reportType) {
+                case 'monthly': days = 30; break;
+                case 'quarterly': days = 90; break;
+                case 'annual': days = 365; break;
+            }
+            
+            try {
+                const response = await fetch(`/api/reports/download?days=${days}`);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `consumption_report_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Error downloading:', error);
+            }
+        }
+        
+        // Initial load
+        generateReport();
+    </script>
+</body>
+</html>
