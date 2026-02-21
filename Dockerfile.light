@@ -1,0 +1,17 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1
+
+# Use the lightweight requirements to avoid heavy ML builds
+COPY requirements-light.txt /app/requirements-light.txt
+RUN pip install --no-cache-dir -r /app/requirements-light.txt
+
+# Copy project
+COPY . /app
+
+ENV FLASK_ENV=production
+EXPOSE 5000
+
+CMD ["python", "backend/app.py"]

@@ -1,0 +1,6 @@
+Flask>=2.0
+Flask-Cors>=3.0
+Flask-SQLAlchemy>=3.0
+Werkzeug>=2.0
+Jinja2>=3.0
+# Minimal light requirements: ML/data packages omitted to avoid heavy builds
